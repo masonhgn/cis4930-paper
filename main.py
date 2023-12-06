@@ -9,19 +9,46 @@ from sklearn.model_selection import cross_val_score
 import joblib
 
 
+def run_all_models():
 
-def build_svm():
+	#these are all the different feature sets we will test to figure out which combinations of features are most effective
+	feature_sets = {
+		1:['Lag1_AAL','Lag2_AAL','Lag3_AAL','Lag4_AAL','Lag5_AAL',    'Lag1_WTI','Lag2_WTI','Lag3_WTI','Lag4_WTI','Lag5_WTI',     '5SMA', '20SMA','Volume'],
+		2:['Lag1_AAL','Lag2_AAL','Lag3_AAL','Lag4_AAL','Lag5_AAL',    'Lag1_WTI','Lag2_WTI','Lag3_WTI','Lag4_WTI','Lag5_WTI'],
+		3:['Lag1_AAL','Lag2_AAL','Lag3_AAL','Lag4_AAL','Lag5_AAL'],
+		4:['Lag1_WTI','Lag2_WTI','Lag3_WTI','Lag4_WTI','Lag5_WTI'],
+		5:['5SMA', '20SMA'],
+		6:['5SMA', '20SMA','Volume'],
+		7:['5SMA', '20SMA','Lag1_AAL','Lag2_AAL','Lag3_AAL','Lag4_AAL','Lag5_AAL'],
+		8:['5SMA', '20SMA','Lag1_WTI','Lag2_WTI','Lag3_WTI','Lag4_WTI','Lag5_WTI'],
+	}
+
+	kernels = ['linear', 'poly', 'rbf']
+	result = []
+	for fs in feature_sets.keys():
+		for k in kernels:
+			print('running feature set ' + str(fs) + ' with kernel '+ k)
+			model = build_svm(feature_sets[fs], fs, k)
+			result.append(model)
+			
+	print(result)
+
+
+
+def build_svm(feature_list, features_idx, kern):
+
+	title = 'svm_'+ str(features_idx) + '_' + kern
+
 	# Load the original data
-	aal_df = pd.read_csv('moving_avgs.csv')
+	features = pd.read_csv('data/aal_features.csv')
 
 	# Convert 'Date' to datetime
-	aal_df['Date'] = pd.to_datetime(aal_df['Date'])
+	features['Date'] = pd.to_datetime(features['Date'])
 
 	# Split the data into features, labels, and dates
-	X = aal_df[['20SMA', '5SMA']]
-	y = aal_df['Close']
-	dates = aal_df['Date']
-
+	X = features[feature_list]
+	y = features['Close']
+	dates = features['Date']
 	# Split the dataset into training and testing sets, including dates
 	X_train, X_test, y_train, y_test, dates_train, dates_test = train_test_split(X, y, dates, test_size=0.2, random_state=42)
 
@@ -31,13 +58,13 @@ def build_svm():
 	X_test_scaled = scaler.transform(X_test)
 
 	# Train the SVR model
-	clf = SVR(kernel='linear')
+	clf = SVR(kernel=kern)
 	clf.fit(X_train_scaled, y_train)
 
-	joblib.dump(clf, 'svm_model.pkl')
+	joblib.dump(clf, 'models/' + title + '_model.pkl')
 
 	# Save the scaler
-	joblib.dump(scaler, 'scaler.pkl')
+	joblib.dump(scaler, 'scalers/' + title + '_scaler.pkl')
 
 
 
@@ -51,33 +78,41 @@ def build_svm():
 	print(f"Original Data - Mean Squared Error: {mse}")
 	print(f"Original Data - R-squared: {r2}")
 
+	'''
 	# Cross-validation scores on the original data
-	scores = cross_val_score(clf, X, y, cv=5)
+	scores = cross_val_score(clf, X, y, cv=3, n_jobs=-1)
 	print("Cross-validated scores:", scores)
 	print("Average cross-validation score:", scores.mean())
-
+	'''
 	# Plotting actual vs predicted prices on the original data
 	plot_df = pd.DataFrame({'Date': dates_test, 'Actual': y_test, 'Predicted': y_pred})
 	plot_df.sort_values(by='Date', inplace=True)
 	plt.figure(figsize=(12, 6))
+
 	plt.plot(plot_df['Date'], plot_df['Actual'], label='Actual Prices', color='blue')
 	plt.plot(plot_df['Date'], plot_df['Predicted'], label='Predicted Prices', color='red')
-	plt.title('Actual vs Predicted Prices Over Time (Original Data)')
+	plt.title('Actual vs Predicted Prices Over Time')
 	plt.xlabel('Date')
 	plt.ylabel('Price')
 	plt.legend()
 	plt.xticks(rotation=45)
+
 	plt.tight_layout()
-	plt.show()
+	plt.title('Features: (' + ', '.join(feature_list) + ') Kernel: ' + kern)
 
+	plt.savefig('images/'+title)
 
+	plt.close()
+
+	return [features_idx,kern,mse,r2]
+	#return [features_idx,kern,mse,r2,scores.mean()]
 
 
 
 
 
 def main():
-	build_svm()
+	run_all_models()
 
 if __name__=="__main__":
 	main()
