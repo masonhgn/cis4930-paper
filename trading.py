@@ -27,12 +27,13 @@ def main():
 
 	result = {}
 
-
+	#get true test dataset (maybe 2023 data)
 	df = pd.read_csv('data/aal_features.csv')
 
-	for k in range(1,7):
+	for k in range(1,7): #cycle through different feature sets
 		for kernel in ['linear','rbf']:
-			model_title = 'models/svm_' + str(k) + '_' + kernel + '_model.pkl'
+			model_title = 'models/svm_' + str(k) + '_' + kernel + '_model.pkl' #fetch model title
+
 			clf = joblib.load(model_title)
 			scaler = joblib.load('scalers/svm_' + str(k) + '_' + kernel + '_scaler.pkl')
 
@@ -43,6 +44,9 @@ def main():
 
 			result[model_title] = returns
 
+	#print returns for each model
+	for item in result:
+		print(item, result[item])
 
 
 
@@ -51,9 +55,10 @@ def main():
 
 
 def test_featureset(key, df, clf, scaler):
+	'''test an individual set of features (tests a feature set on the entire dataframe's worth of days)'''
 	def custom_predict(row):
 		features = {feature: row[feature] for feature in feature_sets[key]}
-		print(key)
+		
 		prediction = predict(features, clf, scaler)
 		return prediction
 
@@ -64,8 +69,8 @@ def test_featureset(key, df, clf, scaler):
 
 
 def predict(features, clf, scaler):
-	features = list(features)
-	print(features)
+	'''predict a single day's Close price based on a specific model/feature set'''
+	features = pd.DataFrame([features])
 
 	new_scaled_data = scaler.transform(features)
 

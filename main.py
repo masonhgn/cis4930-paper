@@ -21,6 +21,12 @@ def run_all_models():
 		6:['5SMA', '20SMA','Lag1_WTI','Lag2_WTI','Lag3_WTI','Lag4_WTI','Lag5_WTI'],
 	}
 
+
+	'''run all models with the above features, and record which features used, mse and r2'''
+
+
+
+	#svm
 	kernels = ['linear','rbf']
 	result = []
 	for fs in feature_sets.keys():
