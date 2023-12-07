@@ -10,17 +10,70 @@ import joblib
 import math
 
 
+feature_sets = {
+		1:['Lag1_AAL','Lag2_AAL','Lag3_AAL','Lag4_AAL','Lag5_AAL',    'Lag1_WTI','Lag2_WTI','Lag3_WTI','Lag4_WTI','Lag5_WTI',     '5SMA', '20SMA','Volume'],
+		2:['Lag1_AAL','Lag2_AAL','Lag3_AAL','Lag4_AAL','Lag5_AAL'],
+		3:['Lag1_WTI','Lag2_WTI','Lag3_WTI','Lag4_WTI','Lag5_WTI'],
+		4:['5SMA', '20SMA','Volume'],
+		5:['5SMA', '20SMA','Lag1_AAL','Lag2_AAL','Lag3_AAL','Lag4_AAL','Lag5_AAL'],
+		6:['5SMA', '20SMA','Lag1_WTI','Lag2_WTI','Lag3_WTI','Lag4_WTI','Lag5_WTI'],
+	}
+
+
+
+
+
 def main():
-	clf = joblib.load('svm_model.pkl')
-	scaler = joblib.load('scaler.pkl')
+
+	result = {}
 
 
-	
-	
-	df = pd.read_csv('moving_avgs_new.csv')
-	df['Predicted_Close'] = df.apply(lambda row: predict(row['20SMA'], row['5SMA'],clf,scaler), axis=1)
+	df = pd.read_csv('data/aal_features.csv')
 
-	print(test(df['Close'], df['Predicted_Close']))
+	for k in range(1,7):
+		for kernel in ['linear','rbf']:
+			model_title = 'models/svm_' + str(k) + '_' + kernel + '_model.pkl'
+			clf = joblib.load(model_title)
+			scaler = joblib.load('scalers/svm_' + str(k) + '_' + kernel + '_scaler.pkl')
+
+			#create predictions
+			df = test_featureset(k, df, clf, scaler)
+
+			returns = test(df['Close'], df['Predicted_Close'])
+
+			result[model_title] = returns
+
+
+
+
+
+
+
+
+def test_featureset(key, df, clf, scaler):
+	def custom_predict(row):
+		features = {feature: row[feature] for feature in feature_sets[key]}
+		print(key)
+		prediction = predict(features, clf, scaler)
+		return prediction
+
+	df['Predicted_Close'] = df.apply(custom_predict, axis=1)
+	return df
+
+
+
+
+def predict(features, clf, scaler):
+	features = list(features)
+	print(features)
+
+	new_scaled_data = scaler.transform(features)
+
+	#predict next day's price
+	next_day_prediction = clf.predict(new_scaled_data)
+	return next_day_prediction
+
+
 
 
 
@@ -43,22 +96,6 @@ def test(real, pred):
     return (capital - initial)/initial * 100
 
 
-
-
-
-
-def predict(sma20, sma5, clf, scaler):
-	new_data_for_today = pd.DataFrame({
-	    '20SMA': [sma20],
-	    '5SMA': [sma5]
-	})
-
-	#scale new data
-	new_scaled_data = scaler.transform(new_data_for_today)
-
-	#predict next day's price
-	next_day_prediction = clf.predict(new_scaled_data)
-	return next_day_prediction
 
 if __name__=="__main__":
 	main()

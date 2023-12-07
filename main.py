@@ -14,16 +14,14 @@ def run_all_models():
 	#these are all the different feature sets we will test to figure out which combinations of features are most effective
 	feature_sets = {
 		1:['Lag1_AAL','Lag2_AAL','Lag3_AAL','Lag4_AAL','Lag5_AAL',    'Lag1_WTI','Lag2_WTI','Lag3_WTI','Lag4_WTI','Lag5_WTI',     '5SMA', '20SMA','Volume'],
-		2:['Lag1_AAL','Lag2_AAL','Lag3_AAL','Lag4_AAL','Lag5_AAL',    'Lag1_WTI','Lag2_WTI','Lag3_WTI','Lag4_WTI','Lag5_WTI'],
-		3:['Lag1_AAL','Lag2_AAL','Lag3_AAL','Lag4_AAL','Lag5_AAL'],
-		4:['Lag1_WTI','Lag2_WTI','Lag3_WTI','Lag4_WTI','Lag5_WTI'],
-		5:['5SMA', '20SMA'],
-		6:['5SMA', '20SMA','Volume'],
-		7:['5SMA', '20SMA','Lag1_AAL','Lag2_AAL','Lag3_AAL','Lag4_AAL','Lag5_AAL'],
-		8:['5SMA', '20SMA','Lag1_WTI','Lag2_WTI','Lag3_WTI','Lag4_WTI','Lag5_WTI'],
+		2:['Lag1_AAL','Lag2_AAL','Lag3_AAL','Lag4_AAL','Lag5_AAL'],
+		3:['Lag1_WTI','Lag2_WTI','Lag3_WTI','Lag4_WTI','Lag5_WTI'],
+		4:['5SMA', '20SMA','Volume'],
+		5:['5SMA', '20SMA','Lag1_AAL','Lag2_AAL','Lag3_AAL','Lag4_AAL','Lag5_AAL'],
+		6:['5SMA', '20SMA','Lag1_WTI','Lag2_WTI','Lag3_WTI','Lag4_WTI','Lag5_WTI'],
 	}
 
-	kernels = ['linear', 'poly', 'rbf']
+	kernels = ['linear','rbf']
 	result = []
 	for fs in feature_sets.keys():
 		for k in kernels:
@@ -31,7 +29,7 @@ def run_all_models():
 			model = build_svm(feature_sets[fs], fs, k)
 			result.append(model)
 			
-	print(result)
+	return result
 
 
 
@@ -97,8 +95,9 @@ def build_svm(feature_list, features_idx, kern):
 	plt.legend()
 	plt.xticks(rotation=45)
 
-	plt.tight_layout()
-	plt.title('Features: (' + ', '.join(feature_list) + ') Kernel: ' + kern)
+	#plt.tight_layout()
+
+	plt.title('Features: (' + ', '.join(feature_list) + ') Kernel: ' + kern, wrap=True)
 
 	plt.savefig('images/'+title)
 
@@ -112,7 +111,9 @@ def build_svm(feature_list, features_idx, kern):
 
 
 def main():
-	run_all_models()
+	vec = run_all_models()
+
+	for row in vec: print(row)
 
 if __name__=="__main__":
 	main()
