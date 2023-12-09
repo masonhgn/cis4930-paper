@@ -110,7 +110,7 @@ def xgboost_model(
     split_by_date = True,
     split_date = '2019-12-31',
     training_percent = 0.2,
-    data_path = 'cis4930-paper/data/aal_features.csv',
+    data_path = 'data/aal_features.csv',
     features = ['Close', 'Lag1_AAL', 'Lag2_AAL', 'Lag3_AAL', 'Lag4_AAL', 'Lag5_AAL'],
     target_feature = 'Close'
 ):

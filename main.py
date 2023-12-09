@@ -13,14 +13,14 @@ from xgb_model import xgboost_model
 from trading import stock_return
 
 
-def run_all_models():
+def run_all_svm_models():
 
 	#these are all the different feature sets we will test to figure out which combinations of features are most effective
 	feature_sets = {
-		1:['Lag1_AAL','Lag2_AAL','Lag3_AAL','Lag4_AAL','Lag5_AAL',    'Lag1_WTI','Lag2_WTI','Lag3_WTI','Lag4_WTI','Lag5_WTI',     '5SMA', '20SMA','Volume'],
+		1:['Lag1_AAL','Lag2_AAL','Lag3_AAL','Lag4_AAL','Lag5_AAL',    'Lag1_WTI','Lag2_WTI','Lag3_WTI','Lag4_WTI','Lag5_WTI',     '5SMA', '20SMA','Volume_Lag1'],
 		2:['Lag1_AAL','Lag2_AAL','Lag3_AAL','Lag4_AAL','Lag5_AAL'],
 		3:['Lag1_WTI','Lag2_WTI','Lag3_WTI','Lag4_WTI','Lag5_WTI'],
-		4:['5SMA', '20SMA','Volume'],
+		4:['5SMA', '20SMA','Volume_Lag1'],
 		5:['5SMA', '20SMA','Lag1_AAL','Lag2_AAL','Lag3_AAL','Lag4_AAL','Lag5_AAL'],
 		6:['5SMA', '20SMA','Lag1_WTI','Lag2_WTI','Lag3_WTI','Lag4_WTI','Lag5_WTI'],
 	}
@@ -44,6 +44,17 @@ def run_all_models():
 
 			
 	return result
+
+
+
+
+
+
+
+
+
+
+
 
 
 def splitData(data): 
@@ -145,9 +156,9 @@ def build_svm(feature_list, features_idx, kern):
 	r2 = r2_score(y_test, y_pred)
 	print(f"Original Data - Mean Squared Error: {mse}")
 	print(f"Original Data - R-squared: {r2}")
-	print(np.array(y_test).shape, y_pred.shape)
+	print()
 
-	print(y_pred.shape, y_test.shape)
+	
 
 
 	'''
@@ -185,8 +196,15 @@ def build_svm(feature_list, features_idx, kern):
 
 
 def main():
-	# vec = run_all_models()
-	xgboost_model(data_path='cis4930-paper/data/aal_features.csv')
+	
+	print('RUNNING SVM MODELS...')
+	vec = run_all_svm_models()
+
+	print('RUNNING XGBOOST MODEL...')
+	xgboost_model(data_path='data/aal_features.csv')
+	
+	print('RUNNING ONE LSTM MODEL...')
+	build_lstm(['Lag1_AAL','Lag2_AAL','Lag3_AAL','Lag4_AAL','Lag5_AAL'], 2)
 
 	# for row in vec: print(row)
 
