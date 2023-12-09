@@ -7,7 +7,6 @@ import numpy as np
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.model_selection import cross_val_score
 import joblib
-import math
 
 
 feature_sets = {
@@ -82,7 +81,7 @@ def predict(features, clf, scaler):
 
 
 
-def test(real, pred): 
+def stock_return(real, pred): 
     initial = 100000
     capital = initial
     yesterday = real[0]

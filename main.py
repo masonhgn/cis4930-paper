@@ -2,11 +2,14 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVR
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, LSTM
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.model_selection import cross_val_score
 import joblib
+from trading import stock_return
 
 
 def run_all_models():
@@ -29,16 +32,76 @@ def run_all_models():
 	#svm
 	kernels = ['linear','rbf']
 	result = []
+	result_lstm = []
+
 	for fs in feature_sets.keys():
+		#result_lstm.append(build_lstm(feature_sets[fs], fs))
 		for k in kernels:
 			print('running feature set ' + str(fs) + ' with kernel '+ k)
 			model = build_svm(feature_sets[fs], fs, k)
 			result.append(model)
+
 			
 	return result
 
 
+def splitData(data): 
+        train_size = int(data.shape[0]*0.8)
+        data = data.to_numpy()
+        train, test =data[:train_size,:], data[train_size:data.shape[0],:]
+        # reshape input to be  [samples, time steps, features]
+        trainX, trainY = [], []
+        for i in range(60, train_size):
+            trainX.append(train[i-60:i,1:])
+            trainY.append(train[i,0])
+            
+        trainX, trainY = np.array(trainX), np.array(trainY)
+        test_1= data[train_size-60: , : ]
+        testX=[]
+        testY=test[:,0]
+        for i in range(60, len(test_1)):
+            testX.append(test_1[i-60:i,1:])
+        
+        testX, testY = np.array(testX), np.array(testY)
+        return trainX,trainY, testX, testY
 
+def build_lstm(feature_list, features_idx):
+        data = pd.read_csv('data/aal_features.csv')			# Load the original data
+        data = data[feature_list]
+        train_size = int(data.shape[0]*0.8)
+        
+        test_size = data.shape[0] - train_size				# Split the data into training and testing sets, including dates
+        trainX, trainY, testX, testY = splitData(data)
+        
+		# create and fit the LSTM network
+        model = Sequential()
+        model.add(LSTM(50, return_sequences = True, input_shape=(trainX.shape[1],data.shape[1]-1)))	# 50 neurons in the first layer
+        model.add(LSTM(50, return_sequences = False))		# 50 neurons in the second layer "Hidden Layer"
+        model.add(Dense(25 ,activation='relu'))				# 25 neurons in the third layer
+        model.add(Dense(1))									# 1 neuron in the output layer since the output is a single value
+        model.compile(optimizer='adam', loss='mean_squared_error')	# Compile the model using the mean squared error loss function 
+        model.fit(trainX,trainY,batch_size=1, epochs=3 )			#and the adam optimizer
+        
+        testPredict = model.predict(testX)
+        testPredict= testPredict.reshape(-1, )
+        # calculate root mean squared error
+        mse = (mean_squared_error(testY, testPredict))
+        r2 = r2_score(testY, testPredict)
+        print(f"Original Data - Mean Squared Error: {mse}")
+        print(f"Original Data - R-squared: {r2}")
+        print(f'"Original Data - Return: {stock_return(testY,testPredict):.2f}%')
+        data = data.to_numpy()
+        plt.figure(figsize=(20, 10))
+        plt.plot(range(0,train_size+test_size), data[:,0] , label="Actual")
+        plt.plot(range(train_size, test_size+train_size), testPredict , label = "Predicted")
+        # Set plot labels and legend
+        plt.title('Predicted vs. Actual Prices')
+        plt.xlabel('Data Point Index')
+        plt.ylabel('Price')
+        plt.grid(True)
+        plt.legend()
+        plt.show()
+        return [f'Feature {features_idx}',f'Return: {r2_score(testY, testPredict):.2f}',f'MSE: {mse}',f'R^2: {r2}']
 def build_svm(feature_list, features_idx, kern):
 
 	title = 'svm_'+ str(features_idx) + '_' + kern
@@ -81,6 +144,10 @@ def build_svm(feature_list, features_idx, kern):
 	r2 = r2_score(y_test, y_pred)
 	print(f"Original Data - Mean Squared Error: {mse}")
 	print(f"Original Data - R-squared: {r2}")
+	print(np.array(y_test).shape, y_pred.shape)
+
+	print(y_pred.shape, y_test.shape)
+
 
 	'''
 	# Cross-validation scores on the original data
