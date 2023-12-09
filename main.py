@@ -9,6 +9,7 @@ import numpy as np
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.model_selection import cross_val_score
 import joblib
+from xgb_model import xgboost_model
 from trading import stock_return
 
 
@@ -184,9 +185,10 @@ def build_svm(feature_list, features_idx, kern):
 
 
 def main():
-	vec = run_all_models()
+	# vec = run_all_models()
+	xgboost_model(data_path='cis4930-paper/data/aal_features.csv')
 
-	for row in vec: print(row)
+	# for row in vec: print(row)
 
 if __name__=="__main__":
 	main()
